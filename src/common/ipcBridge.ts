@@ -85,6 +85,7 @@ export const fs = {
   createTempFile: bridge.buildProvider<string, { fileName: string }>('create-temp-file'), // 创建临时文件
   writeFile: bridge.buildProvider<boolean, { path: string; data: Uint8Array | string }>('write-file'), // 写入文件
   getFileMetadata: bridge.buildProvider<IFileMetadata, { path: string }>('get-file-metadata'), // 获取文件元数据
+  stat: bridge.buildProvider<{ isDirectory: boolean; isFile: boolean } | null, string>('fs-stat'), // 获取文件状态
   copyFilesToWorkspace: bridge.buildProvider<
     // 返回成功与部分失败的详细状态，便于前端提示用户 / Return details for successful and failed copies for better UI feedback
     IBridgeResponse<{ copiedFiles: string[]; failedFiles?: Array<{ path: string; error: string }> }>,

@@ -379,11 +379,16 @@ const Guid: React.FC = () => {
     setFiles((prevFiles) => prevFiles.filter((file) => file !== targetPath));
   }, []);
 
+  const handleDirectoryDropped = useCallback((path: string) => {
+    setDir(path);
+  }, []);
+
   // 使用拖拽 hook（拖拽视为粘贴操作，替换现有文件）
   // Use drag upload hook (drag is treated like paste, replaces existing files)
   const { isFileDragging, dragHandlers } = useDragUpload({
     supportedExts: allSupportedExts,
     onFilesAdded: handleFilesPasted,
+    onDirectoryDropped: handleDirectoryDropped,
   });
 
   // 使用共享的PasteService集成（粘贴操作替换现有文件）

@@ -434,6 +434,20 @@ export function initFsBridge(): void {
     }
   });
 
+  // 获取文件状态 (stat)
+  ipcBridge.fs.stat.provider(async (filePath) => {
+    try {
+      const stats = await fs.stat(filePath);
+      return {
+        isDirectory: stats.isDirectory(),
+        isFile: stats.isFile(),
+      };
+    } catch (error) {
+      console.error('Failed to stat file:', error);
+      return null;
+    }
+  });
+
   // 复制文件到工作空间
   ipcBridge.fs.copyFilesToWorkspace.provider(async ({ filePaths, workspace, sourceRoot }) => {
     try {

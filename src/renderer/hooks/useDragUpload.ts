@@ -9,13 +9,15 @@ import { useTranslation } from 'react-i18next';
 import { Message } from '@arco-design/web-react';
 import type { FileMetadata } from '../services/FileService';
 import { isSupportedFile, FileService } from '../services/FileService';
+import { ipcBridge } from '@/common';
 
 export interface UseDragUploadOptions {
   supportedExts?: string[];
   onFilesAdded?: (files: FileMetadata[]) => void;
+  onDirectoryDropped?: (path: string) => void;
 }
 
-export const useDragUpload = ({ supportedExts = [], onFilesAdded }: UseDragUploadOptions) => {
+export const useDragUpload = ({ supportedExts = [], onFilesAdded, onDirectoryDropped }: UseDragUploadOptions) => {
   const { t } = useTranslation();
   const [isFileDragging, setIsFileDragging] = useState(false);
 
@@ -65,9 +67,30 @@ export const useDragUpload = ({ supportedExts = [], onFilesAdded }: UseDragUploa
       setIsFileDragging(false);
 
       if (!onFilesAdded) return;
+      if (!onDirectoryDropped) return;
 
       try {
         const droppedFiles = e.nativeEvent.dataTransfer!.files;
+
+        // Check if the first item is a directory (handle workspace setting for single folder drop)
+        if (droppedFiles.length === 1 && onDirectoryDropped) {
+          const file = droppedFiles[0];
+          // Electron adds 'path' to the File object
+          const electronAPI = (window as any).electronAPI;
+          const path = electronAPI.getPathForFile(file);
+          if (path) {
+            try {
+              const stat = await ipcBridge.fs.stat.invoke(path);
+              if (stat && stat.isDirectory) {
+                onDirectoryDropped(path);
+                return;
+              }
+            } catch (err) {
+              // Ignore error, assume it's a file or proceed to standard handling
+              console.debug('Failed to stat dropped item, treating as file:', err);
+            }
+          }
+        }
 
         // 第一步：先校验文件类型，筛选出支持的文件
         const validFiles: File[] = [];
@@ -98,7 +121,7 @@ export const useDragUpload = ({ supportedExts = [], onFilesAdded }: UseDragUploa
         Message.error(t('sendbox.dropFileError', 'Failed to process dropped files'));
       }
     },
-    [onFilesAdded, supportedExts, t]
+    [onFilesAdded, onDirectoryDropped, supportedExts, t]
   );
 
   const dragHandlers = {
